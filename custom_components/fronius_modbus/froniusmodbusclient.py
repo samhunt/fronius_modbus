@@ -294,58 +294,52 @@ class FroniusModbusClient(ExtModbusClient):
         if regs is None:
             return False
 
-        DCW_SF = self._client.convert_from_registers(regs[2:3], data_type = self._client.DATATYPE.INT16)
-        DCWH_SF = self._client.convert_from_registers(regs[3:4], data_type = self._client.DATATYPE.INT16)
-        #N = self._client.convert_from_registers(regs[6:7], data_type = self._client.DATATYPE.UINT16)
-        # if N != 4:
-        #     _LOGGER.error(f"Integration only supports 4 mppt modules. Found only: {N}")
-        #     return
+        aSF = self._client.convert_from_registers(regs[0:1], data_type = self._client.DATATYPE.INT16)
+        vSF = self._client.convert_from_registers(regs[1:2], data_type = self._client.DATATYPE.INT16)
+        wSF = self._client.convert_from_registers(regs[2:3], data_type = self._client.DATATYPE.INT16)
 
+        module_1_DCA = self._client.convert_from_registers(regs[17:18], data_type = self._client.DATATYPE.UINT16)
+        module_1_DCV = self._client.convert_from_registers(regs[18:19], data_type = self._client.DATATYPE.UINT16)
         module_1_DCW = self._client.convert_from_registers(regs[19:20], data_type = self._client.DATATYPE.UINT16)
-        module_1_DCWH = self._client.convert_from_registers(regs[20:22], data_type = self._client.DATATYPE.UINT32)
 
+        module_2_DCA = self._client.convert_from_registers(regs[37:38], data_type = self._client.DATATYPE.UINT16)
+        module_2_DCV = self._client.convert_from_registers(regs[38:39], data_type = self._client.DATATYPE.UINT16)
         module_2_DCW = self._client.convert_from_registers(regs[39:40], data_type = self._client.DATATYPE.UINT16)
-        module_2_DCWH = self._client.convert_from_registers(regs[40:42], data_type = self._client.DATATYPE.UINT32)
 
-        mppt1_power = self.calculate_value(module_1_DCW, DCW_SF, 2, 0, 15000)
-        mppt2_power = self.calculate_value(module_2_DCW, DCW_SF, 2, 0, 15000)
+        mppt1_power = self.calculate_value(module_1_DCW, wSF, 2, 0, 15000)
+        mppt2_power = self.calculate_value(module_2_DCW, wSF, 2, 0, 15000)
         if not mppt1_power is None and not mppt2_power is None:
              pv_power = mppt1_power + mppt2_power
         else:
             pv_power = None
 
-        mppt1_lfte = self.calculate_value(module_1_DCWH, DCWH_SF)
-        mppt2_lfte = self.calculate_value(module_2_DCWH, DCWH_SF)
+        mppt1_voltage = self.calculate_value(module_1_DCV, vSF, 2)
+        mppt1_current = self.calculate_value(module_1_DCA, aSF, 2)
+        mppt2_voltage = self.calculate_value(module_2_DCV, vSF, 2)
+        mppt2_current = self.calculate_value(module_2_DCA, aSF, 2)
 
         self.data['mppt1_power'] = mppt1_power
         self.data['mppt2_power'] = mppt2_power
         self.data['pv_power'] = pv_power
-        self.data['mppt1_lfte'] = mppt1_lfte
-        self.data['mppt2_lfte'] = mppt2_lfte
+        self.data['mppt1_voltage'] = mppt1_voltage
+        self.data['mppt1_current'] = mppt1_current
+        self.data['mppt2_voltage'] = mppt2_voltage
+        self.data['mppt2_current'] = mppt2_current
 
         if self.storage_configured:
             module_3_DCW = self._client.convert_from_registers(regs[59:60], data_type = self._client.DATATYPE.UINT16)
-            module_3_DCWH = self._client.convert_from_registers(regs[60:62], data_type = self._client.DATATYPE.UINT32)
-
             module_4_DCW = self._client.convert_from_registers(regs[79:80], data_type = self._client.DATATYPE.UINT16)
-            module_4_DCWH = self._client.convert_from_registers(regs[80:82], data_type = self._client.DATATYPE.UINT32)
 
-            mppt3_power = self.calculate_value(module_3_DCW, DCW_SF, 2, 0, 15000)
-            mppt4_power = self.calculate_value(module_4_DCW, DCW_SF, 2, 0, 15000)
+            mppt3_power = self.calculate_value(module_3_DCW, wSF, 2, 0, 15000)
+            mppt4_power = self.calculate_value(module_4_DCW, wSF, 2, 0, 15000)
             if not mppt3_power is None and not mppt4_power is None:
                 storage_power = mppt4_power - mppt3_power
             else:
                 storage_power = None
-        
-            mppt3_lfte = self.calculate_value(module_3_DCWH, DCWH_SF)
-            mppt4_lfte = self.calculate_value(module_4_DCWH, DCWH_SF)
 
             self.data['mppt3_power'] = mppt3_power
             self.data['mppt4_power'] = mppt4_power
             self.data['storage_power'] = storage_power
-
-            self.data['mppt3_lfte'] = mppt3_lfte
-            self.data['mppt4_lfte'] = mppt4_lfte
 
         return True
 
