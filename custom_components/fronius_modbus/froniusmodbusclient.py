@@ -290,7 +290,7 @@ class FroniusModbusClient(ExtModbusClient):
         return True
 
     async def read_mppt_data(self):
-        regs = await self.get_registers(unit_id=self._inverter_unit_id, address=MPPT_ADDRESS, count=88)
+        regs = await self.get_registers(unit_id=self._inverter_unit_id, address=MPPT_ADDRESS, count=48)
         if regs is None:
             return False
 
